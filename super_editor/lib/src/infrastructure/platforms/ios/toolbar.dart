@@ -51,6 +51,8 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
         focalPoint: LeaderMenuFocalPoint(link: focalPoint),
         elevation: 8.0,
         borderRadius: 6.0,
+        arrowLength: 6.0,
+        arrowBaseWidth: 12.0,
         backgroundColor: brightness == Brightness.dark //
             ? iOSToolbarDarkBackgroundColor
             : iOSToolbarLightBackgroundColor,
@@ -92,10 +94,11 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
     // );
 
     return CupertinoTextSelectionToolbarButton.buttonItem(
-        buttonItem: ContextMenuButtonItem(
-      onPressed: onPressed,
-      label: title,
-    ));
+      buttonItem: ContextMenuButtonItem(
+        onPressed: onPressed,
+        label: title,
+      ),
+    );
 
     // return TextButton(
     //   onPressed: onPressed,
