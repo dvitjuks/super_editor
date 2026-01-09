@@ -49,7 +49,6 @@ class SuperAndroidTextField extends StatefulWidget {
     this.imeConfiguration,
     this.showComposingUnderline = true,
     this.tapHandlers = const [],
-    this.popoverToolbarBuilder = _defaultAndroidToolbarBuilder,
     this.showDebugPaint = false,
     this.padding,
     this.copyTitle,
@@ -160,13 +159,9 @@ class SuperAndroidTextField extends StatefulWidget {
   /// Whether to paint debug guides.
   final bool showDebugPaint;
 
-  /// Builder that creates the popover toolbar widget that appears when text is selected.
-  final Widget Function(BuildContext, AndroidEditingOverlayController, ToolbarConfig) popoverToolbarBuilder;
-
   /// Padding placed around the text content of this text field, but within the
   /// scrollable viewport.
   final EdgeInsets? padding;
-
 
   /// Title for the "Copy" option in the editing toolbar.
   final String? copyTitle;
@@ -729,31 +724,35 @@ class SuperAndroidTextFieldState extends State<SuperAndroidTextField>
           textContentKey: _textContentKey,
           tapRegionGroupId: widget.tapRegionGroupId,
           handleColor: widget.handlesColor,
-          popoverToolbarBuilder: widget.popoverToolbarBuilder,
+          popoverToolbarBuilder: _defaultAndroidToolbarBuilder,
           showDebugPaint: widget.showDebugPaint,
         );
       },
     );
   }
-}
 
-Widget _defaultAndroidToolbarBuilder(
-  BuildContext context,
-  AndroidEditingOverlayController controller,
-  ToolbarConfig config,
-) {
-  final isSelectionExpanded = !controller.textController.selection.isCollapsed;
+  Widget _defaultAndroidToolbarBuilder(
+    BuildContext context,
+    AndroidEditingOverlayController controller,
+    ToolbarConfig config,
+  ) {
+    final isSelectionExpanded = !controller.textController.selection.isCollapsed;
 
-  return AndroidTextEditingFloatingToolbar(
-    onCutPressed: isSelectionExpanded //
-        ? () => _onToolbarCutPressed(controller)
-        : null,
-    onCopyPressed: isSelectionExpanded //
-        ? () => _onToolbarCopyPressed(controller)
-        : null,
-    onPastePressed: () => _onToolbarPastePressed(controller),
-    onSelectAllPressed: () => _onToolbarSelectAllPressed(controller),
-  );
+    return AndroidTextEditingFloatingToolbar(
+      cutTitle: widget.cutTitle,
+      onCutPressed: isSelectionExpanded //
+          ? () => _onToolbarCutPressed(controller)
+          : null,
+      copyTitle: widget.copyTitle,
+      onCopyPressed: isSelectionExpanded //
+          ? () => _onToolbarCopyPressed(controller)
+          : null,
+      pasteTitle: widget.pasteTitle,
+      onPastePressed: () => _onToolbarPastePressed(controller),
+      selectAllTitle: widget.selectAllTitle,
+      onSelectAllPressed: () => _onToolbarSelectAllPressed(controller),
+    );
+  }
 }
 
 void _onToolbarCutPressed(AndroidEditingOverlayController controller) {
