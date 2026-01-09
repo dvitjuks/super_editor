@@ -738,7 +738,7 @@ class SuperIOSTextFieldState extends State<SuperIOSTextField>
           textContentKey: _textContentKey,
           tapRegionGroupId: widget.tapRegionGroupId,
           handleColor: widget.handlesColor,
-          popoverToolbarBuilder: iOSSystemPopoverTextFieldToolbarWithFallback,
+          popoverToolbarBuilder: defaultIosPopoverToolbarBuilder,
           showDebugPaint: widget.showDebugPaint,
         );
       },
