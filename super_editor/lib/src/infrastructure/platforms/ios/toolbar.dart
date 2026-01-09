@@ -52,7 +52,7 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
         elevation: 8.0,
         borderRadius: 6.0,
         arrowLength: 6.0,
-        height: 40.0,
+        height: 42.0,
         arrowBaseWidth: 12.0,
         backgroundColor: brightness == Brightness.dark //
             ? iOSToolbarDarkBackgroundColor
