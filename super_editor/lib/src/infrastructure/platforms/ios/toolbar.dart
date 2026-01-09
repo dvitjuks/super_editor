@@ -12,6 +12,9 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
     this.onCutPressed,
     this.onCopyPressed,
     this.onPastePressed,
+    this.copyTitle,
+    this.cutTitle,
+    this.pasteTitle,
   }) : super(key: key);
 
   final Key? floatingToolbarKey;
@@ -22,6 +25,15 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
   final VoidCallback? onCutPressed;
   final VoidCallback? onCopyPressed;
   final VoidCallback? onPastePressed;
+
+  /// Title for the "Copy" option in the editing toolbar.
+  final String? copyTitle;
+
+  /// Title for the "Cut" option in the editing toolbar.
+  final String? cutTitle;
+
+  /// Title for the "Paste" option in the editing toolbar.
+  final String? pasteTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -50,17 +62,17 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
           if (onCutPressed != null)
             _buildButton(
               onPressed: onCutPressed!,
-              title: 'Cut',
+              title: cutTitle ?? 'Cut',
             ),
           if (onCopyPressed != null)
             _buildButton(
               onPressed: onCopyPressed!,
-              title: 'Copy',
+              title: copyTitle ?? 'Copy',
             ),
           if (onPastePressed != null)
             _buildButton(
               onPressed: onPastePressed!,
-              title: 'Paste',
+              title: pasteTitle ?? 'Paste',
             ),
         ],
       ),

@@ -57,8 +57,11 @@ class SuperIOSTextField extends StatefulWidget {
     this.textInputAction,
     this.imeConfiguration,
     this.showComposingUnderline = true,
-    this.popoverToolbarBuilder = defaultIosPopoverToolbarBuilder,
     this.showDebugPaint = false,
+    this.copyTitle,
+    this.cutTitle,
+    this.pasteTitle,
+    this.selectAllTitle,
   }) : super(key: key);
 
   /// [FocusNode] attached to this text field.
@@ -164,11 +167,20 @@ class SuperIOSTextField extends StatefulWidget {
   /// Whether to show an underline beneath the text in the composing region.
   final bool showComposingUnderline;
 
-  /// Builder that creates the popover toolbar widget that appears when text is selected.
-  final IOSPopoverToolbarBuilder popoverToolbarBuilder;
-
   /// Whether to paint debug guides.
   final bool showDebugPaint;
+
+  /// Title for the "Copy" option in the editing toolbar.
+  final String? copyTitle;
+
+  /// Title for the "Cut" option in the editing toolbar.
+  final String? cutTitle;
+
+  /// Title for the "Paste" option in the editing toolbar.
+  final String? pasteTitle;
+
+  /// Title for the "Select All" option in the editing toolbar.
+  final String? selectAllTitle;
 
   @override
   State createState() => SuperIOSTextFieldState();
@@ -726,69 +738,72 @@ class SuperIOSTextFieldState extends State<SuperIOSTextField>
           textContentKey: _textContentKey,
           tapRegionGroupId: widget.tapRegionGroupId,
           handleColor: widget.handlesColor,
-          popoverToolbarBuilder: widget.popoverToolbarBuilder,
+          popoverToolbarBuilder: iOSSystemPopoverTextFieldToolbarWithFallback,
           showDebugPaint: widget.showDebugPaint,
         );
       },
+    );
+  }
+
+  /// An [IOSPopoverToolbarBuilder] that displays the iOS system popover toolbar, if the version of
+  /// iOS is recent enough, otherwise builds [defaultIosPopoverToolbarBuilder].
+  Widget iOSSystemPopoverTextFieldToolbarWithFallback(BuildContext context, IOSEditingOverlayController controller) {
+    if (IOSSystemContextMenu.isSupported(context)) {
+      return IOSSuperTextFieldSystemContextMenu(
+        controller: controller,
+      );
+    }
+
+    return defaultIosPopoverToolbarBuilder(context, controller);
+  }
+
+  /// Returns a widget for the default/standard iOS-style popover provided by Super Text Field.
+  Widget defaultIosPopoverToolbarBuilder(BuildContext context, IOSEditingOverlayController controller) {
+    return IOSTextEditingFloatingToolbar(
+      focalPoint: controller.toolbarFocalPoint,
+      onCutPressed: () {
+        final textController = controller.textController;
+        final selection = textController.selection;
+        if (selection.isCollapsed) {
+          return;
+        }
+
+        final selectedText = selection.textInside(textController.text.toPlainText());
+
+        textController.deleteSelectedText();
+
+        Clipboard.setData(ClipboardData(text: selectedText));
+      },
+      onCopyPressed: () {
+        final textController = controller.textController;
+        final selection = textController.selection;
+        final selectedText = selection.textInside(textController.text.toPlainText());
+
+        Clipboard.setData(ClipboardData(text: selectedText));
+      },
+      onPastePressed: () async {
+        final clipboardContent = await Clipboard.getData('text/plain');
+        if (clipboardContent == null || clipboardContent.text == null) {
+          return;
+        }
+
+        final textController = controller.textController;
+        final selection = textController.selection;
+        if (selection.isCollapsed) {
+          textController.insertAtCaret(text: clipboardContent.text!);
+        } else {
+          textController.replaceSelectionWithUnstyledText(replacementText: clipboardContent.text!);
+        }
+      },
+      copyTitle: widget.copyTitle,
+      cutTitle: widget.cutTitle,
+      pasteTitle: widget.pasteTitle,
     );
   }
 }
 
 /// Builder that returns a widget for an iOS-style popover editing toolbar.
 typedef IOSPopoverToolbarBuilder = Widget Function(BuildContext, IOSEditingOverlayController);
-
-/// An [IOSPopoverToolbarBuilder] that displays the iOS system popover toolbar, if the version of
-/// iOS is recent enough, otherwise builds [defaultIosPopoverToolbarBuilder].
-Widget iOSSystemPopoverTextFieldToolbarWithFallback(BuildContext context, IOSEditingOverlayController controller) {
-  if (IOSSystemContextMenu.isSupported(context)) {
-    return IOSSuperTextFieldSystemContextMenu(
-      controller: controller,
-    );
-  }
-
-  return defaultIosPopoverToolbarBuilder(context, controller);
-}
-
-/// Returns a widget for the default/standard iOS-style popover provided by Super Text Field.
-Widget defaultIosPopoverToolbarBuilder(BuildContext context, IOSEditingOverlayController controller) {
-  return IOSTextEditingFloatingToolbar(
-    focalPoint: controller.toolbarFocalPoint,
-    onCutPressed: () {
-      final textController = controller.textController;
-      final selection = textController.selection;
-      if (selection.isCollapsed) {
-        return;
-      }
-
-      final selectedText = selection.textInside(textController.text.toPlainText());
-
-      textController.deleteSelectedText();
-
-      Clipboard.setData(ClipboardData(text: selectedText));
-    },
-    onCopyPressed: () {
-      final textController = controller.textController;
-      final selection = textController.selection;
-      final selectedText = selection.textInside(textController.text.toPlainText());
-
-      Clipboard.setData(ClipboardData(text: selectedText));
-    },
-    onPastePressed: () async {
-      final clipboardContent = await Clipboard.getData('text/plain');
-      if (clipboardContent == null || clipboardContent.text == null) {
-        return;
-      }
-
-      final textController = controller.textController;
-      final selection = textController.selection;
-      if (selection.isCollapsed) {
-        textController.insertAtCaret(text: clipboardContent.text!);
-      } else {
-        textController.replaceSelectionWithUnstyledText(replacementText: clipboardContent.text!);
-      }
-    },
-  );
-}
 
 class IOSSuperTextFieldSystemContextMenu extends StatefulWidget {
   const IOSSuperTextFieldSystemContextMenu({

@@ -7,18 +7,26 @@ class AndroidTextEditingFloatingToolbar extends StatefulWidget {
     Key? key,
     this.focalPoint,
     this.floatingToolbarKey,
+    this.cutTitle,
     this.onCutPressed,
+    this.copyTitle,
     this.onCopyPressed,
+    this.pasteTitle,
     this.onPastePressed,
+    this.selectAllTitle,
     this.onSelectAllPressed,
   }) : super(key: key);
 
   final Key? floatingToolbarKey;
   final LeaderLink? focalPoint;
 
+  final String? cutTitle;
   final VoidCallback? onCutPressed;
+  final String? copyTitle;
   final VoidCallback? onCopyPressed;
+  final String? pasteTitle;
   final VoidCallback? onPastePressed;
+  final String? selectAllTitle;
   final VoidCallback? onSelectAllPressed;
 
   @override
@@ -81,22 +89,22 @@ class _AndroidTextEditingFloatingToolbarState extends State<AndroidTextEditingFl
       if (widget.onCutPressed != null)
         _ButtonViewModel(
           onPressed: widget.onCutPressed!,
-          title: 'Cut',
+          title: widget.cutTitle ?? 'Cut',
         ),
       if (widget.onCopyPressed != null)
         _ButtonViewModel(
           onPressed: widget.onCopyPressed!,
-          title: 'Copy',
+          title: widget.copyTitle ?? 'Copy',
         ),
       if (widget.onPastePressed != null)
         _ButtonViewModel(
           onPressed: widget.onPastePressed!,
-          title: 'Paste',
+          title: widget.pasteTitle ?? 'Paste',
         ),
       if (widget.onSelectAllPressed != null)
         _ButtonViewModel(
           onPressed: widget.onSelectAllPressed!,
-          title: 'Select All',
+          title: widget.selectAllTitle ?? 'Select All',
         ),
     ];
 

@@ -52,6 +52,10 @@ class SuperAndroidTextField extends StatefulWidget {
     this.popoverToolbarBuilder = _defaultAndroidToolbarBuilder,
     this.showDebugPaint = false,
     this.padding,
+    this.copyTitle,
+    this.cutTitle,
+    this.pasteTitle,
+    this.selectAllTitle,
   }) : super(key: key);
 
   /// [FocusNode] attached to this text field.
@@ -162,6 +166,19 @@ class SuperAndroidTextField extends StatefulWidget {
   /// Padding placed around the text content of this text field, but within the
   /// scrollable viewport.
   final EdgeInsets? padding;
+
+
+  /// Title for the "Copy" option in the editing toolbar.
+  final String? copyTitle;
+
+  /// Title for the "Cut" option in the editing toolbar.
+  final String? cutTitle;
+
+  /// Title for the "Paste" option in the editing toolbar.
+  final String? pasteTitle;
+
+  /// Title for the "Select All" option in the editing toolbar.
+  final String? selectAllTitle;
 
   @override
   State createState() => SuperAndroidTextFieldState();
