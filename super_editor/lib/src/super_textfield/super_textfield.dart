@@ -80,6 +80,10 @@ class SuperTextField extends StatefulWidget {
     this.textInputAction,
     this.imeConfiguration,
     this.showComposingUnderline,
+    this.copyTitle,
+    this.cutTitle,
+    this.pasteTitle,
+    this.selectAllTitle,
   }) : super(key: key);
 
   final FocusNode? focusNode;
@@ -228,6 +232,18 @@ class SuperTextField extends StatefulWidget {
   /// Whether to show an underline beneath the text in the composing region, or `null`
   /// to let [SuperTextField] decide when to show the underline.
   final bool? showComposingUnderline;
+
+  /// Title for the "Copy" option in the editing toolbar.
+  final String? copyTitle;
+
+  /// Title for the "Cut" option in the editing toolbar.
+  final String? cutTitle;
+
+  /// Title for the "Paste" option in the editing toolbar.
+  final String? pasteTitle;
+
+  /// Title for the "Select All" option in the editing toolbar.
+  final String? selectAllTitle;
 
   @override
   State<SuperTextField> createState() => SuperTextFieldState();
@@ -425,6 +441,10 @@ class SuperTextFieldState extends State<SuperTextField> implements ImeInputOwner
             showComposingUnderline: widget.showComposingUnderline ?? true,
             padding: widget.padding,
             blinkTimingMode: widget.blinkTimingMode,
+            copyTitle: widget.copyTitle,
+            cutTitle: widget.cutTitle,
+            pasteTitle: widget.pasteTitle,
+            selectAllTitle: widget.selectAllTitle,
           ),
         );
       case SuperTextFieldPlatformConfiguration.iOS:
@@ -455,6 +475,9 @@ class SuperTextFieldState extends State<SuperTextField> implements ImeInputOwner
             imeConfiguration: widget.imeConfiguration,
             showComposingUnderline: widget.showComposingUnderline ?? true,
             blinkTimingMode: widget.blinkTimingMode,
+            copyTitle: widget.copyTitle,
+            cutTitle: widget.cutTitle,
+            pasteTitle: widget.pasteTitle,
           ),
         );
     }
