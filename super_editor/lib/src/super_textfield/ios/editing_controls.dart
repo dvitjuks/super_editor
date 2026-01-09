@@ -395,7 +395,7 @@ class _IOSEditingControlsState extends State<IOSEditingControls>
         ignoring: !widget.editingController.isToolbarVisible,
         child: AnimatedOpacity(
           opacity: widget.editingController.isToolbarVisible ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 150),
+          duration: const Duration(milliseconds: 300),
           child: TapRegion(
             groupId: widget.tapRegionGroupId,
             child: Builder(builder: (context) {
