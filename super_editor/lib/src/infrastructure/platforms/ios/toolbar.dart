@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:follow_the_leader/follow_the_leader.dart';
 import 'package:overlord/follow_the_leader.dart';
@@ -49,6 +50,7 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
         key: floatingToolbarKey,
         focalPoint: LeaderMenuFocalPoint(link: focalPoint),
         elevation: 8.0,
+        borderRadius: 6.0,
         backgroundColor: brightness == Brightness.dark //
             ? iOSToolbarDarkBackgroundColor
             : iOSToolbarLightBackgroundColor,
@@ -89,24 +91,30 @@ class IOSTextEditingFloatingToolbar extends StatelessWidget {
     //   onPressed: onPressed,
     // );
 
-    return TextButton(
+    return CupertinoTextSelectionToolbarButton.buttonItem(
+        buttonItem: ContextMenuButtonItem(
       onPressed: onPressed,
-      style: TextButton.styleFrom(
-        minimumSize: const Size(kMinInteractiveDimension, 0),
-        padding: EdgeInsets.zero,
-        splashFactory: NoSplash.splashFactory,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w300,
-          ),
-        ),
-      ),
-    );
+      label: title,
+    ));
+
+    // return TextButton(
+    //   onPressed: onPressed,
+    //   style: TextButton.styleFrom(
+    //     minimumSize: const Size(kMinInteractiveDimension, 0),
+    //     padding: EdgeInsets.zero,
+    //     splashFactory: NoSplash.splashFactory,
+    //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    //   ),
+    //   child: Padding(
+    //     padding: const EdgeInsets.symmetric(horizontal: 12.0),
+    //     child: Text(
+    //       title,
+    //       style: const TextStyle(
+    //         fontSize: 12,
+    //         fontWeight: FontWeight.w300,
+    //       ),
+    //     ),
+    //   ),
+    // );
   }
 }
