@@ -646,7 +646,7 @@ class AndroidPopoverToolbarContainer extends StatelessWidget {
 
   // These colors were taken from a screenshot of a Pixel 6 emulator running
   // Android API level 35.
-  static const Color _defaultColorLight = Color(0xFFE2E2EA);
+  static const Color _defaultColorLight = Color(0xFFFFFFFF);
   static const Color _defaultColorDark = Color(0xFF33343A);
 
   static Color _getColor(ColorScheme colorScheme) {

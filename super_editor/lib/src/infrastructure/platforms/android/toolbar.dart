@@ -108,20 +108,27 @@ class _AndroidTextEditingFloatingToolbarState extends State<AndroidTextEditingFl
         ),
     ];
 
-    return KeyedSubtree(
-      key: widget.floatingToolbarKey,
-      child: AndroidPopoverToolbar(
-        isAbove: _isAbove,
-        toolbarBuilder: _defaultToolbarBuilder,
-        children: [
-          for (int i = 0; i < buttons.length; i++)
-            TextSelectionToolbarTextButton(
-              padding: TextSelectionToolbarTextButton.getPadding(i, buttons.length),
-              onPressed: buttons[i].onPressed,
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(buttons[i].title),
-            ),
-        ],
+    return Theme(
+      data: ThemeData(
+        colorScheme: brightness == Brightness.light
+            ? const ColorScheme.light(primary: Colors.black)
+            : const ColorScheme.dark(primary: Colors.white),
+      ),
+      child: KeyedSubtree(
+        key: widget.floatingToolbarKey,
+        child: AndroidPopoverToolbar(
+          isAbove: _isAbove,
+          toolbarBuilder: _defaultToolbarBuilder,
+          children: [
+            for (int i = 0; i < buttons.length; i++)
+              TextSelectionToolbarTextButton(
+                padding: TextSelectionToolbarTextButton.getPadding(i, buttons.length),
+                onPressed: buttons[i].onPressed,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(buttons[i].title),
+              ),
+          ],
+        ),
       ),
     );
   }
