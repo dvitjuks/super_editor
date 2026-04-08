@@ -334,6 +334,11 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     // the _realController. Turn this flag back to `true` after the changes.
     _sendTextChangesToPlatform = false;
 
+    // Tracks whether the Safari dead-key fix was applied in this batch.
+    // When true we must sync _osCurrentTextEditingValue after the loop so that
+    // subsequent deltas are applied to the correct base state (see below).
+    var safariDeadKeyFixApplied = false;
+
     for (final delta in deltas) {
       if (delta is TextEditingDeltaInsertion) {
         _log.fine('Processing insertion: $delta');
@@ -368,6 +373,7 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
             delta.insertionOffset == composingRegion.end) {
           _log.fine('Applying Safari dead-key fix for insertion: $delta');
           _applyInsertionAsComposingReplacement(delta);
+          safariDeadKeyFixApplied = true;
           continue;
         }
 
@@ -421,7 +427,22 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     // to the platform again.
     _sendTextChangesToPlatform = true;
 
-    _onReceivedTextEditingValueFromPlatform(currentTextEditingValue!);
+    if (safariDeadKeyFixApplied) {
+      // We corrected the text state on our side (deleted the composing dead-key
+      // char and re-inserted the final character(s)).  Our state now differs from
+      // what _osCurrentTextEditingValue tracked — because that was updated by
+      // applying the raw, buggy Safari delta.
+      //
+      // Sync _osCurrentTextEditingValue to our corrected state now, then send the
+      // corrected value to the platform.  Without this sync, every subsequent
+      // keystroke would see currentTextEditingValue != _osCurrentTextEditingValue
+      // and trigger a redundant _sendEditingValueToPlatform call, which could
+      // confuse Safari's internal state over time.
+      _osCurrentTextEditingValue = currentTextEditingValue!;
+      _sendEditingValueToPlatform();
+    } else {
+      _onReceivedTextEditingValueFromPlatform(currentTextEditingValue!);
+    }
   }
 
   /// Handles a Safari-specific dead-key bug where an insertion delta is sent at
@@ -444,9 +465,18 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
 
     // Insert the completed character(s) at the position where the composing
     // region started.  After the delete above, the caret is already there.
+    //
+    // We always pass TextRange.empty (never delta.composing) because:
+    //   1. Dead key composition is fully complete at this point — there is
+    //      nothing left to compose.
+    //   2. delta.composing is expressed relative to Safari's buggy text state,
+    //      which still contains the dead-key char we just deleted.  Using it
+    //      as-is would produce an out-of-bounds composing range on the corrected
+    //      text, causing the next keystroke to either trigger this fix again
+    //      (replacing the character instead of appending) or break input entirely.
     insertAtCaret(
       text: delta.textInserted,
-      newComposingRegion: delta.composing,
+      newComposingRegion: TextRange.empty,
     );
   }
 
