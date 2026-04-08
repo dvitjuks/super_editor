@@ -9,7 +9,9 @@ import 'package:super_editor/src/infrastructure/attributed_text_styles.dart';
 import 'package:super_editor/src/super_textfield/super_textfield.dart';
 import 'package:super_text_layout/super_text_layout.dart';
 
-import '../../infrastructure/_logging.dart';
+import 'package:super_editor/src/infrastructure/_logging.dart';
+import 'package:super_editor/src/infrastructure/platforms/_browser_stub.dart'
+    if (dart.library.js_interop) 'package:super_editor/src/infrastructure/platforms/_browser_web.dart';
 
 final _log = imeTextFieldLog;
 
@@ -335,6 +337,40 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     for (final delta in deltas) {
       if (delta is TextEditingDeltaInsertion) {
         _log.fine('Processing insertion: $delta');
+
+        // Safari dead-key fix:
+        //
+        // On Safari (web), when the user presses a dead key (e.g. `'` on a Latvian
+        // keyboard) followed by another key, Safari incorrectly sends an insertion
+        // delta placed *at the end* of the current composing region, rather than a
+        // replacement delta that covers the composing region.
+        //
+        // For example, pressing `'` then `a` should produce `ā`, but Safari sends:
+        //   1. Insert `'` at offset n  → text: `'`, composing: [n, n+1)
+        //   2. Insert `ā` at offset n+1 → text: `'ā`  (wrong; should be `ā`)
+        //
+        // We detect this specific pattern via four conditions that together identify
+        // a dead-key completion:
+        //   • isSafariBrowser      – the bug only occurs in Safari
+        //   • composingRegion is exactly 1 character wide – a dead key always
+        //     produces a single composing character; multi-character CJK/IME
+        //     composition would send a replacement delta, not an insertion
+        //   • delta.insertionOffset == composingRegion.end – Safari inserts after
+        //     the composing character instead of replacing it
+        //
+        // Chrome and Firefox correctly send a TextEditingDeltaReplacement that
+        // covers the composing region, so this branch is never reached there.
+        final isDeadKeyComposingRegion =
+            composingRegion.isValid && (composingRegion.end - composingRegion.start) == 1;
+        if (kIsWeb &&
+            isSafariBrowser &&
+            isDeadKeyComposingRegion &&
+            delta.insertionOffset == composingRegion.end) {
+          _log.fine('Applying Safari dead-key fix for insertion: $delta');
+          _applyInsertionAsComposingReplacement(delta);
+          continue;
+        }
+
         if (selection.isCollapsed && delta.insertionOffset == selection.extentOffset) {
           // This action appears to be user input at the caret.
           insertAtCaret(
@@ -386,6 +422,32 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     _sendTextChangesToPlatform = true;
 
     _onReceivedTextEditingValueFromPlatform(currentTextEditingValue!);
+  }
+
+  /// Handles a Safari-specific dead-key bug where an insertion delta is sent at
+  /// the end of the composing region instead of a replacement delta.
+  ///
+  /// Deletes the current composing region and re-inserts [delta.textInserted] at
+  /// the composing region start, effectively converting the erroneous insertion
+  /// into the correct replacement.
+  void _applyInsertionAsComposingReplacement(TextEditingDeltaInsertion delta) {
+    final composingStart = composingRegion.start;
+    final composingEnd = composingRegion.end;
+
+    // Remove the dead-key composing character.
+    delete(
+      from: composingStart,
+      to: composingEnd,
+      newSelection: TextSelection.collapsed(offset: composingStart),
+      newComposingRegion: TextRange.empty,
+    );
+
+    // Insert the completed character(s) at the position where the composing
+    // region started.  After the delete above, the caret is already there.
+    insertAtCaret(
+      text: delta.textInserted,
+      newComposingRegion: delta.composing,
+    );
   }
 
   @override
