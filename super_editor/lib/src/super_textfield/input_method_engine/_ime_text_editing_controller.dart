@@ -9,9 +9,7 @@ import 'package:super_editor/src/infrastructure/attributed_text_styles.dart';
 import 'package:super_editor/src/super_textfield/super_textfield.dart';
 import 'package:super_text_layout/super_text_layout.dart';
 
-import 'package:super_editor/src/infrastructure/_logging.dart';
-import 'package:super_editor/src/infrastructure/platforms/_browser_stub.dart'
-    if (dart.library.js_interop) 'package:super_editor/src/infrastructure/platforms/_browser_web.dart';
+import '../../infrastructure/_logging.dart';
 
 final _log = imeTextFieldLog;
 
@@ -334,49 +332,9 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     // the _realController. Turn this flag back to `true` after the changes.
     _sendTextChangesToPlatform = false;
 
-    // Tracks whether the Safari dead-key fix was applied in this batch.
-    // When true we must sync _osCurrentTextEditingValue after the loop so that
-    // subsequent deltas are applied to the correct base state (see below).
-    var safariDeadKeyFixApplied = false;
-
     for (final delta in deltas) {
       if (delta is TextEditingDeltaInsertion) {
         _log.fine('Processing insertion: $delta');
-
-        // Safari dead-key fix:
-        //
-        // On Safari (web), when the user presses a dead key (e.g. `'` on a Latvian
-        // keyboard) followed by another key, Safari incorrectly sends an insertion
-        // delta placed *at the end* of the current composing region, rather than a
-        // replacement delta that covers the composing region.
-        //
-        // For example, pressing `'` then `a` should produce `ā`, but Safari sends:
-        //   1. Insert `'` at offset n  → text: `'`, composing: [n, n+1)
-        //   2. Insert `ā` at offset n+1 → text: `'ā`  (wrong; should be `ā`)
-        //
-        // We detect this specific pattern via four conditions that together identify
-        // a dead-key completion:
-        //   • isSafariBrowser      – the bug only occurs in Safari
-        //   • composingRegion is exactly 1 character wide – a dead key always
-        //     produces a single composing character; multi-character CJK/IME
-        //     composition would send a replacement delta, not an insertion
-        //   • delta.insertionOffset == composingRegion.end – Safari inserts after
-        //     the composing character instead of replacing it
-        //
-        // Chrome and Firefox correctly send a TextEditingDeltaReplacement that
-        // covers the composing region, so this branch is never reached there.
-        final isDeadKeyComposingRegion =
-            composingRegion.isValid && (composingRegion.end - composingRegion.start) == 1;
-        if (kIsWeb &&
-            isSafariBrowser &&
-            isDeadKeyComposingRegion &&
-            delta.insertionOffset == composingRegion.end) {
-          _log.fine('Applying Safari dead-key fix for insertion: $delta');
-          _applyInsertionAsComposingReplacement(delta);
-          safariDeadKeyFixApplied = true;
-          continue;
-        }
-
         if (selection.isCollapsed && delta.insertionOffset == selection.extentOffset) {
           // This action appears to be user input at the caret.
           insertAtCaret(
@@ -427,57 +385,7 @@ class ImeAttributedTextEditingController extends AttributedTextEditingController
     // to the platform again.
     _sendTextChangesToPlatform = true;
 
-    if (safariDeadKeyFixApplied) {
-      // We corrected the text state on our side (deleted the composing dead-key
-      // char and re-inserted the final character(s)).  Our state now differs from
-      // what _osCurrentTextEditingValue tracked — because that was updated by
-      // applying the raw, buggy Safari delta.
-      //
-      // Sync _osCurrentTextEditingValue to our corrected state now, then send the
-      // corrected value to the platform.  Without this sync, every subsequent
-      // keystroke would see currentTextEditingValue != _osCurrentTextEditingValue
-      // and trigger a redundant _sendEditingValueToPlatform call, which could
-      // confuse Safari's internal state over time.
-      _osCurrentTextEditingValue = currentTextEditingValue!;
-      _sendEditingValueToPlatform();
-    } else {
-      _onReceivedTextEditingValueFromPlatform(currentTextEditingValue!);
-    }
-  }
-
-  /// Handles a Safari-specific dead-key bug where an insertion delta is sent at
-  /// the end of the composing region instead of a replacement delta.
-  ///
-  /// Deletes the current composing region and re-inserts [delta.textInserted] at
-  /// the composing region start, effectively converting the erroneous insertion
-  /// into the correct replacement.
-  void _applyInsertionAsComposingReplacement(TextEditingDeltaInsertion delta) {
-    final composingStart = composingRegion.start;
-    final composingEnd = composingRegion.end;
-
-    // Remove the dead-key composing character.
-    delete(
-      from: composingStart,
-      to: composingEnd,
-      newSelection: TextSelection.collapsed(offset: composingStart),
-      newComposingRegion: TextRange.empty,
-    );
-
-    // Insert the completed character(s) at the position where the composing
-    // region started.  After the delete above, the caret is already there.
-    //
-    // We always pass TextRange.empty (never delta.composing) because:
-    //   1. Dead key composition is fully complete at this point — there is
-    //      nothing left to compose.
-    //   2. delta.composing is expressed relative to Safari's buggy text state,
-    //      which still contains the dead-key char we just deleted.  Using it
-    //      as-is would produce an out-of-bounds composing range on the corrected
-    //      text, causing the next keystroke to either trigger this fix again
-    //      (replacing the character instead of appending) or break input entirely.
-    insertAtCaret(
-      text: delta.textInserted,
-      newComposingRegion: TextRange.empty,
-    );
+    _onReceivedTextEditingValueFromPlatform(currentTextEditingValue!);
   }
 
   @override
